@@ -3,31 +3,76 @@ let userAnswerElement = document.querySelector("#user-answer")
 let submitButton = document.querySelector("#submit-answer")
 let resultTextElement = document.querySelector('#result')
 
-// TODO finish the script to challenge the user about their knowledge of capital cities.
-// An array of country codes is provided in the countries.js file. 
-// Your browser treats all JavaScript files as one big file, o
-// organized in the order of the script tags so the countriesAndCodes array is available to this script.
+// Adding the play again button:
+let playAgainBtn = document.querySelector('#playAgain')
 
-console.log(countriesAndCodes)  // You don't need to log countriesAndCodes - just proving it is available 
+// Selecting a random country using the Math floor and random functions
+// Learned some about it from here:
+// https://stackoverflow.com/questions/4550505/getting-a-random-value-from-a-javascript-array
+// Don't totally understand how they work, even reading the tooltips.
+let randomCountry = countriesAndCodes[Math.floor(Math.random() * countriesAndCodes.length)]
+// Using the randomly selected object, taking out the name and
+// the country code (referred to as alpha-2))
+let countryName = randomCountry['name']
+let countryCode = randomCountry['alpha-2']
+// Then prompting the user with the name.
+randomCountryElement.innerHTML = countryName
 
+submitButton.addEventListener('click', () => {
+    // the submit button listens for a click, then pulls in the user's answer
+    let userAnswer = userAnswerElement.value
+    // verifies that they even put in an answer first
+    if (userAnswer.length === 0) {
+        alert('Please enter an answer')
+    // If they did, the fetch function starts and tries to bring back the answer
+    // which the user's answer is checked against in the next function
+    } else {
+        infoFetch().then(countryCapital => {
+            answerCheck(userAnswer, countryCapital)
+        })
+    }
+})
 
-// TODO when the page loads, select an element at random from the countriesAndCodes array
+playAgainBtn.addEventListener('click', () => {
+    // The play again button runs through the same sort of things at the beginning
+    // could be reduced to another function..
+    randomCountry = countriesAndCodes[Math.floor(Math.random() * countriesAndCodes.length)]
+    countryName = randomCountry['name']
+    countryCode = randomCountry['alpha-2']
+    // New random country name and code, and resetting the html elements for the user.
+    randomCountryElement.innerHTML = countryName
+    userAnswerElement.value = ''
+    resultTextElement.innerHTML = 'Replace with result'
+})
 
-// TODO display the country's name in the randomCountryElement 
+function answerCheck(answer, capital) {
+    // Using the actual answer and the user input, both set to lower case and compared,
+    if (answer.toLowerCase() === capital.toLowerCase()) {
+        // either tells the user they got it right or wrong.
+        resultTextElement.innerHTML = `Correct! The capital of ${countryName} is ${capital}`
+    } else {
+        resultTextElement.innerHTML = `Incorrect, the capital isn't ${answer}, it's ${capital}`
+    }
+}
 
-// TODO add a click event handler to the submitButton.  When the user clicks the button,
-//  * read the text from the userAnswerElement 
-//  * Use fetch() to make a call to the World Bank API with the two-letter country code (from countriesAndCodes, example 'CN' or 'AF')
-//  * Verify no errors were encountered in the API call. If an error occurs, display an alert message. 
-//  * If the API call was successful, extract the capital city from the World Bank API response.
-//  * Compare it to the user's answer. 
-//      You can decide how correct you require the user to be. At the minimum, the user's answer should be the same
-//      as the World Bank data - make the comparison case insensitive.
-//      If you want to be more flexible, include and use a string similarity library such as https://github.com/hiddentao/fast-levenshtein 
-//  * Finally, display an appropriate message in the resultTextElement to tell the user if they are right or wrong. 
-//      For example "Correct! The capital of Germany is Berlin" or "Wrong - the capital of Germany is not G, it is Berlin"
-
-
-// TODO finally, connect the play again button. Clear the user's answer, select a new random country, 
-// display the country's name, handle the user's guess. If you didn't use functions in the code you've 
-// already written, you should refactor your code to use functions to avoid writing very similar code twice. 
+// This was explained a little bit to me by a classmate
+// the fetch function runs using the country code piece saved earlier
+function infoFetch() {
+    let url = `http://api.worldbank.org/v2/country/${countryCode}?format=json`
+    // the whole promise is set to be returned?
+    return fetch(url)
+    // the response is saved as json?
+    .then(response => response.json())
+    // is this the callback piece? using the promise data,
+    // the country capital is pulled out and returned with the promise?
+    .then(countryData => {
+        let countryInfo = countryData[1]
+        countryCapital = countryInfo[0].capitalCity
+        return countryCapital
+    })
+    // errors are caught and displayed to the user.
+    .catch(err => {
+        alert("An error occurred: " + err)
+        console.log(err)
+    })
+}
